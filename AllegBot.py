@@ -1,8 +1,9 @@
 import discord
 import logging
 import requests
+from discord.ext import tasks, commands
 from sys import stdout
-from key import DiscordToken, guild_id
+from key import DiscordToken, guild_id, steam_api
 
 #TODO
 #Future:
@@ -24,26 +25,45 @@ class DiscordClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, **options: any) -> None:
         super().__init__(intents=intents, **options)
         self.tree = discord.app_commands.CommandTree(self)
+        self.channels = 1146976402512564294, 680507105723154434
     
     async def setup_hook(self) -> None:
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
-        self.tree.copy_global_to(guild=ALLEG_GUILD)
-        await self.tree.sync(guild=ALLEG_GUILD)
+        #self.tree.copy_global_to(guild=ALLEG_GUILD)
+        #await self.tree.sync(guild=ALLEG_GUILD)
     
 
 handler = logging.FileHandler(filename="student-test.log", encoding='utf-8', mode='w')       
 intents = discord.Intents.default()
-intents.message_content = True
 client = DiscordClient(intents = intents)
+last_player_num = 0
 
 def get_player_numbers():
-        player_request = requests.get(url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1?appid=700480")
-        player_json = player_request.json()
-        print(player_json)
-        return player_json["response"]["player_count"]
+    player_request = requests.get(url = f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1?appid=700480?key={steam_api}",)
+    player_json = player_request.json()
+    print(player_json)
+    return player_json["response"]["player_count"]
 
-if __name__ == "__main__":
-    print(get_player_numbers())
+@tasks.loop(minutes=2)
+async def send_players():
+    player_num = get_player_numbers()
+    if player_num != last_player_num:
+        last_player_num = player_num
+        for channel in client.channels:
+            try:
+                print(f"sending in {channel}")
+                await client.get_channel(channel).send(f"""Current Players: {player_num}""")
+            except:
+                print(f"Not a valid channel {channel}")
 
-    #client.run(DiscordToken, log_handler=handler)
+    else:
+        print("no change in player numbers")
+
+
+@client.event
+async def on_ready():
+    send_players.start()
+    print("ready")
+
+client.run(DiscordToken, log_handler=handler)
