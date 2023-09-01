@@ -2,3 +2,4 @@ __pycache__*
 key.py
 *.log
 alleg-bot-env*
+*.bat
