@@ -31,8 +31,8 @@ class DiscordClient(discord.Client):
     async def setup_hook(self) -> None:
         self.tree.copy_global_to(guild=TEST_GUILD)
         await self.tree.sync(guild=TEST_GUILD)
-        #self.tree.copy_global_to(guild=ALLEG_GUILD)
-        #await self.tree.sync(guild=ALLEG_GUILD)
+        self.tree.copy_global_to(guild=ALLEG_GUILD)
+        await self.tree.sync(guild=ALLEG_GUILD)
     
 
 handler = logging.FileHandler(filename="student-test.log", encoding='utf-8', mode='w')       
