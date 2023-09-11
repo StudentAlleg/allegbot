@@ -56,20 +56,37 @@ def get_time(UTC: bool = False) -> str:
     
     return(time.strftime("UTC %z (%Y/%m/%d-%H:%M:%S):", time_struct))
 
+async def send_players_now(num: int, channel_id: int):
+    """Helper function to send players"""
+        
+    try:
+        print(f"{get_time()} sending in {channel_id}: #{num}, times since last check: {client.num_checks_since_last_post}")
+        await client.get_channel(channel_id).send(f"""Current Players: {num}\n(Checks since last post: {client.num_checks_since_last_post})""")
+    except:
+        print(f"{get_time()} Not a valid channel {channel_id}")
+    #client.num_checks_since_last_post = 0
+
+@client.tree.command()
+#@discord.app_commands.describe()
+
+async def get_online(interaction: discord.Interaction):
+    """Prints the number of players in the channel it was sent."""
+    print("Command send:")
+    await send_players_now(get_player_numbers(), interaction.channel_id)
+
+
+
+
 @tasks.loop(minutes=2)
 async def send_players():
     player_num = get_player_numbers()
     if player_num != client.last_player_num:
-        client.last_player_num = player_num
+        
         for channel in client.channels:
             if channel == 680507105723154434:
                 #dev - skip the alleg server
                 continue
-            try:
-                print(f"{get_time()} sending in {channel}: #{player_num}, times since last check: {client.num_checks_since_last_post}")
-                await client.get_channel(channel).send(f"""Current Players: {player_num}\n(Checks since last post: {client.num_checks_since_last_post})""")
-            except:
-                print(f"{get_time()} Not a valid channel {channel}")
+            await send_players_now(player_num, channel)
         client.num_checks_since_last_post = 0
     else:
         print(f"{get_time()} no change in player numbers")
