@@ -73,8 +73,7 @@ async def get_online(interaction: discord.Interaction):
     """Prints the number of players in the channel it was sent."""
     print("Command send:")
     await send_players_now(get_player_numbers(), interaction.channel_id)
-
-
+    await interaction.response.send_message()
 
 
 @tasks.loop(minutes=2)
@@ -83,11 +82,9 @@ async def send_players():
     if player_num != client.last_player_num:
         
         for channel in client.channels:
-            if channel == 680507105723154434:
-                #dev - skip the alleg server
-                continue
             await send_players_now(player_num, channel)
         client.num_checks_since_last_post = 0
+        client.last_player_num = player_num
     else:
         print(f"{get_time()} no change in player numbers")
         client.num_checks_since_last_post += 1
